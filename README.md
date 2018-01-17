@@ -11,5 +11,5 @@ Post Body
 
 Content-Type: application/json
 
-Start docker image
+# TO Start docker image
 docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres
