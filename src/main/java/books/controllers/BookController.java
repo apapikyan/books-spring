@@ -1,5 +1,7 @@
-package books;
+package books.controllers;
 
+import books.models.Book;
+import books.DefaultBookService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,48 +10,49 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
 @RequestMapping("/book")
 public class BookController {
 
-    final static Logger logger = Logger.getLogger(BookController.class);
+    private final static Logger logger = Logger.getLogger(BookController.class);
 
-    @Autowired
-    DefaultBookService bookService;
+    @Autowired //TODO use @Inject - why ?
+            DefaultBookService bookService;
 
-    @RequestMapping(method = RequestMethod.POST)
+    @PostMapping
     public ResponseEntity<Book> addBook(@RequestBody Book book) {
         bookService.save(book);
         logger.debug("Added:: " + book);
         return new ResponseEntity<>(book, HttpStatus.CREATED);
     }
 
-    @RequestMapping(method = RequestMethod.PUT)
+    @PutMapping
     public ResponseEntity<Void> updateBook(@RequestBody Book book) {
-        Book existingBook = bookService.getById(book.getId());
-        if (existingBook == null) {
+        Optional<Book> existingBook = Optional.ofNullable(bookService.getById(book.getId()));
+        if (!existingBook.isPresent()) {
             logger.debug("Book with id " + book.getId() + " doesn't exist");
-            return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
             bookService.save(book);
-            return new ResponseEntity<Void>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @GetMapping(value = "/{id}")
     public ResponseEntity<Book> getBook(@PathVariable("id") Long id) {
-        Book book = bookService.getById(id);
-        if (book == null) {
-            logger.debug("Book with id " + book.getId() + " doesn't exist");
+        Optional<Book> book = Optional.ofNullable(bookService.getById(id));
+        if (!book.isPresent()) {
+            logger.debug("Book with id " + id + " doesn't exist");
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         logger.debug("Found Book:: " + book);
-        return new ResponseEntity<>(book, HttpStatus.OK);
+        return new ResponseEntity<>(book.get(), HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.GET)
+    @GetMapping
     public ResponseEntity<List<Book>> getAllBooks() {
         List<Book> books = bookService.getAll();
         if (books.isEmpty()) {
@@ -62,14 +65,14 @@ public class BookController {
         return new ResponseEntity<>(books, HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable("id") Long id) {
-        Book book = bookService.getById(id);
-        if (book == null) {
+        Optional<Book> book = Optional.ofNullable(bookService.getById(id));
+        if (!book.isPresent()) {
             logger.debug("Book with id " + id + "doesn't exist");
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
-            bookService.delete(book.getId());
+            bookService.delete(book.get().getId());
             return new ResponseEntity<>(HttpStatus.GONE);
         }
     }
